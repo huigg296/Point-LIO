@@ -163,7 +163,7 @@ void publish_init_map(
   pcl::toROSMsg(*init_feats_world, laserCloudmsg);
 
   laserCloudmsg.header.stamp = get_ros_time(lidar_end_time);
-  laserCloudmsg.header.frame_id = "camera_init";
+  laserCloudmsg.header.frame_id = "odom";
   pubLaserCloudFullRes->publish(laserCloudmsg);
 }
 
@@ -190,7 +190,7 @@ void publish_frame_world(
     pcl::toROSMsg(*laserCloudWorld, laserCloudmsg);
 
     laserCloudmsg.header.stamp = get_ros_time(lidar_end_time);
-    laserCloudmsg.header.frame_id = "camera_init";
+    laserCloudmsg.header.frame_id = "odom";
     pubLaserCloudFullRes->publish(laserCloudmsg);
     // publish_count -= PUBFRAME_PERIOD;
   }
@@ -242,7 +242,7 @@ void publish_frame_body(
   sensor_msgs::msg::PointCloud2 laserCloudmsg;
   pcl::toROSMsg(*laserCloudIMUBody, laserCloudmsg);
   laserCloudmsg.header.stamp = get_ros_time(lidar_end_time);
-  laserCloudmsg.header.frame_id = "body";
+  laserCloudmsg.header.frame_id = "livox_frame";
   pubLaserCloudFull_body->publish(laserCloudmsg);
   // publish_count -= PUBFRAME_PERIOD;
 }
@@ -273,8 +273,8 @@ void publish_odometry(
     const rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr
         &pubOdomAftMapped,
     std::shared_ptr<tf2_ros::TransformBroadcaster> &tf_br) {
-  odomAftMapped.header.frame_id = "camera_init";
-  odomAftMapped.child_frame_id = "aft_mapped";
+  odomAftMapped.header.frame_id = "odom";
+  odomAftMapped.child_frame_id = "livox_frame";
   if (publish_odometry_without_downsample) {
     odomAftMapped.header.stamp = get_ros_time(time_current);
   } else {
@@ -285,8 +285,8 @@ void publish_odometry(
   pubOdomAftMapped->publish(odomAftMapped);
 
   geometry_msgs::msg::TransformStamped transform;
-  transform.header.frame_id = "camera_init";
-  transform.child_frame_id = "aft_mapped";
+  transform.header.frame_id = "odom";
+  transform.child_frame_id = "livox_frame";
   transform.transform.translation.x = odomAftMapped.pose.pose.position.x;
   transform.transform.translation.y = odomAftMapped.pose.pose.position.y;
   transform.transform.translation.z = odomAftMapped.pose.pose.position.z;
@@ -303,7 +303,7 @@ void publish_path(
   set_posestamp(msg_body_pose.pose);
   // msg_body_pose.header.stamp = rclcpp::Time::now();
   msg_body_pose.header.stamp = get_ros_time(lidar_end_time);
-  msg_body_pose.header.frame_id = "camera_init";
+  msg_body_pose.header.frame_id = "odom";
   static int jjj = 0;
   jjj++;
   // if (jjj % 2 == 0) // if path is too large, the rvis will crash
@@ -323,7 +323,7 @@ int main(int argc, char **argv) {
   ivox_ = std::make_shared<IVoxType>(ivox_options_);
 
   path.header.stamp = get_ros_time(lidar_end_time);
-  path.header.frame_id = "camera_init";
+  path.header.frame_id = "odom";
 
   /*** variables definition for counting ***/
   int frame_num = 0;
@@ -402,7 +402,7 @@ int main(int argc, char **argv) {
   auto pubLaserCloudMap =
       nh->create_publisher<sensor_msgs::msg::PointCloud2>("/Laser_map", 1000);
   auto pubOdomAftMapped = nh->create_publisher<nav_msgs::msg::Odometry>(
-      "/aft_mapped_to_init", 1000);
+      "/Odometry", 1000);
   auto pubPath = nh->create_publisher<nav_msgs::msg::Path>("/path", 1000);
   auto plane_pub = nh->create_publisher<visualization_msgs::msg::Marker>(
       "/planner_normal", 1000);
