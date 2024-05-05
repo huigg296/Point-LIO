@@ -5,13 +5,16 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Transform.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/buffer_interface.h>
 #include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_listener.h>
 
-#include <nav_msgs/msg/detail/path__struct.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <nav_msgs/msg/path.hpp>
-#include <sensor_msgs/msg/detail/point_cloud2__struct.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 
 #include "common_lib.h"
@@ -170,7 +173,7 @@ void publish_init_map(
   pcl::toROSMsg(*init_feats_world, laserCloudmsg);
 
   laserCloudmsg.header.stamp = get_ros_time(lidar_end_time);
-  laserCloudmsg.header.frame_id = "odom";
+  laserCloudmsg.header.frame_id = "lidar_odom";
   pubLaserCloudFullRes->publish(laserCloudmsg);
 }
 
@@ -196,7 +199,7 @@ void publish_frame_world(
     pcl::toROSMsg(*laserCloudWorld, laserCloudmsg);
 
     laserCloudmsg.header.stamp = get_ros_time(lidar_end_time);
-    laserCloudmsg.header.frame_id = "odom";
+    laserCloudmsg.header.frame_id = "lidar_odom";
     pubLaserCloudFullRes->publish(laserCloudmsg);
     // publish_count -= PUBFRAME_PERIOD;
   }
@@ -275,10 +278,11 @@ void set_posestamp(T & out)
 }
 
 void publish_odometry(
-  const rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr & pubOdomAftMapped,
-  std::shared_ptr<tf2_ros::TransformBroadcaster> & tf_br)
+  const rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pubOdomAftMapped,
+  std::unique_ptr<tf2_ros::TransformBroadcaster> & tf_br,
+  std::unique_ptr<tf2_ros::Buffer> & tf_buffer, rclcpp::Logger logger_)
 {
-  odomAftMapped.header.frame_id = "odom";
+  odomAftMapped.header.frame_id = "lidar_odom";
   odomAftMapped.child_frame_id = "livox_frame";
   if (publish_odometry_without_downsample) {
     odomAftMapped.header.stamp = get_ros_time(time_current);
@@ -289,18 +293,42 @@ void publish_odometry(
 
   pubOdomAftMapped->publish(odomAftMapped);
 
-  geometry_msgs::msg::TransformStamped transform;
-  transform.header.frame_id = "odom";
-  transform.child_frame_id = "livox_frame";
-  transform.transform.translation.x = odomAftMapped.pose.pose.position.x;
-  transform.transform.translation.y = odomAftMapped.pose.pose.position.y;
-  transform.transform.translation.z = odomAftMapped.pose.pose.position.z;
-  transform.transform.rotation.w = odomAftMapped.pose.pose.orientation.w;
-  transform.transform.rotation.x = odomAftMapped.pose.pose.orientation.x;
-  transform.transform.rotation.y = odomAftMapped.pose.pose.orientation.y;
-  transform.transform.rotation.z = odomAftMapped.pose.pose.orientation.z;
-  transform.header.stamp = odomAftMapped.header.stamp;
-  tf_br->sendTransform(transform);
+  // Publish tf from lidar_odom to base_link
+  static geometry_msgs::msg::TransformStamped livox_to_base_link_transform;
+  static bool transform_acquired = false;  // Check if the transform has already been acquired
+  if (!transform_acquired) {
+    // Get the transform from base_link to livox_frame
+    try {
+      livox_to_base_link_transform =
+        tf_buffer->lookupTransform("livox_frame", "base_link", odomAftMapped.header.stamp);
+      transform_acquired =
+        true;  // Set the flag to true indicating that the transform has been acquired
+    } catch (tf2::TransformException & ex) {
+      RCLCPP_ERROR(
+        logger_, "Failed to lookup transform from base_link to livox_frame: %s", ex.what());
+      return;
+    }
+  }
+
+  // Create a TransformStamped message for lidar_odom to base_link
+  geometry_msgs::msg::TransformStamped transform_stamped;
+  transform_stamped.header.stamp = odomAftMapped.header.stamp;
+  transform_stamped.header.frame_id = "lidar_odom";  // Source frame
+  transform_stamped.child_frame_id = "base_link";    // Target frame
+
+  // Calculate the transform from lidar_odom to base_link by multiplying the transforms
+  tf2::Transform tf_lidar_odom_to_livox_frame;
+  tf2::fromMsg(odomAftMapped.pose.pose, tf_lidar_odom_to_livox_frame);
+  tf2::Transform tf_livox_frame_to_base_link;
+  tf2::fromMsg(livox_to_base_link_transform.transform, tf_livox_frame_to_base_link);
+  tf2::Transform tf_lidar_odom_to_base_link =
+    tf_lidar_odom_to_livox_frame * tf_livox_frame_to_base_link;
+
+  // Convert the resulting transform back to geometry_msgs::TransformStamped
+  transform_stamped.transform = tf2::toMsg(tf_lidar_odom_to_base_link);
+
+  // Publish the tf
+  tf_br->sendTransform(transform_stamped);
 }
 
 void publish_path(const rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubPath)
@@ -308,7 +336,7 @@ void publish_path(const rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubPat
   set_posestamp(msg_body_pose.pose);
   // msg_body_pose.header.stamp = rclcpp::Time::now();
   msg_body_pose.header.stamp = get_ros_time(lidar_end_time);
-  msg_body_pose.header.frame_id = "odom";
+  msg_body_pose.header.frame_id = "lidar_odom";
   static int jjj = 0;
   jjj++;
   // if (jjj % 2 == 0) // if path is too large, the rvis will crash
@@ -329,7 +357,7 @@ int main(int argc, char ** argv)
   ivox_ = std::make_shared<IVoxType>(ivox_options_);
 
   path.header.stamp = get_ros_time(lidar_end_time);
-  path.header.frame_id = "odom";
+  path.header.frame_id = "lidar_odom";
 
   /*** variables definition for counting ***/
   int frame_num = 0;
@@ -398,7 +426,9 @@ int main(int argc, char ** argv)
   auto pubOdomAftMapped = nh->create_publisher<nav_msgs::msg::Odometry>("/Odometry", 1000);
   auto pubPath = nh->create_publisher<nav_msgs::msg::Path>("/path", 1000);
   auto plane_pub = nh->create_publisher<visualization_msgs::msg::Marker>("/planner_normal", 1000);
-  auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(nh);
+  auto tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(nh);
+  auto tf_buffer = std::make_unique<tf2_ros::Buffer>(nh->get_clock());
+  auto transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
   //------------------------------------------------------------------------------------------------------
   signal(SIGINT, SigHandle);
   rclcpp::Rate rate(500);
@@ -689,7 +719,7 @@ int main(int argc, char ** argv)
             if (publish_odometry_without_downsample) {
               /******* Publish odometry *******/
 
-              publish_odometry(pubOdomAftMapped, tf_broadcaster);
+              publish_odometry(pubOdomAftMapped, tf_broadcaster, tf_buffer, nh->get_logger());
               if (runtime_pos_log) {
                 euler_cur = SO3ToEuler(kf_output.x_.rot);
                 fout_out << setw(20) << Measures.lidar_beg_time - first_lidar_time << " "
@@ -874,7 +904,7 @@ int main(int argc, char ** argv)
             if (publish_odometry_without_downsample) {
               /******* Publish odometry *******/
 
-              publish_odometry(pubOdomAftMapped, tf_broadcaster);
+              publish_odometry(pubOdomAftMapped, tf_broadcaster, tf_buffer, nh->get_logger());
               if (runtime_pos_log) {
                 euler_cur = SO3ToEuler(kf_input.x_.rot);
                 fout_out << setw(20) << Measures.lidar_beg_time - first_lidar_time << " "
@@ -970,7 +1000,7 @@ int main(int argc, char ** argv)
       //                     (euler_cur(0), euler_cur(1), euler_cur(2));
       /******* Publish odometry downsample *******/
       if (!publish_odometry_without_downsample) {
-        publish_odometry(pubOdomAftMapped, tf_broadcaster);
+        publish_odometry(pubOdomAftMapped, tf_broadcaster, tf_buffer, nh->get_logger());
       }
 
       /*** add the feature points to map ***/
