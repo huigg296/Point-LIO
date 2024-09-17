@@ -1,8 +1,8 @@
 /**:
     ros__parameters:
         common:
-            lid_topic: "/velodyne_points"
-            imu_topic: "/imu/data"
+            lid_topic: "velodyne_points"
+            imu_topic: "imu/data"
             con_frame: false # true: if you need to combine several LiDAR frames into one
             con_frame_num: 1 # the number of frames combined
             cut_frame: false # true: if you need to cut one LiDAR frame into several subframes
@@ -13,7 +13,7 @@
             lidar_type: 2
             scan_line: 32
             timestamp_unit: 2           # the unit of time/t field in the PointCloud2 rostopic: 0-second, 1-milisecond, 2-microsecond, 3-nanosecond.
-            blind: 2.0 
+            blind: 2.0
 
         mapping:
             imu_en: true
