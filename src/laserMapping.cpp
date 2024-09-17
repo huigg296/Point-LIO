@@ -395,21 +395,21 @@ int main(int argc, char **argv) {
   auto sub_imu = nh->create_subscription<sensor_msgs::msg::Imu>(
       imu_topic, rclcpp::SensorDataQoS(), imu_cbk);
   auto pubLaserCloudFullRes =
-      nh->create_publisher<sensor_msgs::msg::PointCloud2>("/cloud_registered",
+      nh->create_publisher<sensor_msgs::msg::PointCloud2>("cloud_registered",
                                                           1000);
   auto pubLaserCloudFullRes_body =
       nh->create_publisher<sensor_msgs::msg::PointCloud2>(
-          "/cloud_registered_body", 1000);
+          "cloud_registered_body", 1000);
   auto pubLaserCloudEffect =
-      nh->create_publisher<sensor_msgs::msg::PointCloud2>("/cloud_effected",
+      nh->create_publisher<sensor_msgs::msg::PointCloud2>("cloud_effected",
                                                           1000);
   auto pubLaserCloudMap =
-      nh->create_publisher<sensor_msgs::msg::PointCloud2>("/Laser_map", 1000);
+      nh->create_publisher<sensor_msgs::msg::PointCloud2>("Laser_map", 1000);
   auto pubOdomAftMapped = nh->create_publisher<nav_msgs::msg::Odometry>(
-      "/aft_mapped_to_init", 1000);
-  auto pubPath = nh->create_publisher<nav_msgs::msg::Path>("/path", 1000);
+      "aft_mapped_to_init", 1000);
+  auto pubPath = nh->create_publisher<nav_msgs::msg::Path>("path", 1000);
   auto plane_pub = nh->create_publisher<visualization_msgs::msg::Marker>(
-      "/planner_normal", 1000);
+      "planner_normal", 1000);
   auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(nh);
   //------------------------------------------------------------------------------------------------------
   signal(SIGINT, SigHandle);
