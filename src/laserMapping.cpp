@@ -288,18 +288,18 @@ void publish_odometry(
 
   pubOdomAftMapped->publish(odomAftMapped);
 
-  geometry_msgs::msg::TransformStamped transform;
-  transform.header.frame_id = "camera_init";
-  transform.child_frame_id = "aft_mapped";
-  transform.transform.translation.x = odomAftMapped.pose.pose.position.x;
-  transform.transform.translation.y = odomAftMapped.pose.pose.position.y;
-  transform.transform.translation.z = odomAftMapped.pose.pose.position.z;
-  transform.transform.rotation.w = odomAftMapped.pose.pose.orientation.w;
-  transform.transform.rotation.x = odomAftMapped.pose.pose.orientation.x;
-  transform.transform.rotation.y = odomAftMapped.pose.pose.orientation.y;
-  transform.transform.rotation.z = odomAftMapped.pose.pose.orientation.z;
-  transform.header.stamp = odomAftMapped.header.stamp;
-  tf_br->sendTransform(transform);
+  // geometry_msgs::msg::TransformStamped transform;
+  // transform.header.frame_id = "camera_init";
+  // transform.child_frame_id = "aft_mapped";
+  // transform.transform.translation.x = odomAftMapped.pose.pose.position.x;
+  // transform.transform.translation.y = odomAftMapped.pose.pose.position.y;
+  // transform.transform.translation.z = odomAftMapped.pose.pose.position.z;
+  // transform.transform.rotation.w = odomAftMapped.pose.pose.orientation.w;
+  // transform.transform.rotation.x = odomAftMapped.pose.pose.orientation.x;
+  // transform.transform.rotation.y = odomAftMapped.pose.pose.orientation.y;
+  // transform.transform.rotation.z = odomAftMapped.pose.pose.orientation.z;
+  // transform.header.stamp = odomAftMapped.header.stamp;
+  // tf_br->sendTransform(transform);
 }
 
 void publish_path(
