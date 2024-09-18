@@ -1,4 +1,3 @@
-// #include <../include/IKFoM/IKFoM_toolkit/esekfom/esekfom.hpp>
 #include "Estimator.h"
 
 PointCloudXYZI::Ptr normvec(new PointCloudXYZI(100000, 1));
@@ -65,7 +64,7 @@ Eigen::Matrix<double, 24, 1> get_f_input(state_input & s, const input_ikfom & in
   return res;
 }
 
-Eigen::Matrix<double, 30, 1> get_f_output(state_output & s, const input_ikfom & in)
+Eigen::Matrix<double, 30, 1> get_f_output(state_output & s, const input_ikfom & /*in*/)
 {
   Eigen::Matrix<double, 30, 1> res = Eigen::Matrix<double, 30, 1>::Zero();
   vect3 a_inertial = s.rot * s.acc;  // .normalized()
@@ -81,12 +80,12 @@ Eigen::Matrix<double, 24, 24> df_dx_input(state_input & s, const input_ikfom & i
 {
   Eigen::Matrix<double, 24, 24> cov = Eigen::Matrix<double, 24, 24>::Zero();
   cov.template block<3, 3>(0, 12) = Eigen::Matrix3d::Identity();
-  vect3 acc_;
-  in.acc.boxminus(acc_, s.ba);
+  vect3 acc;
+  in.acc.boxminus(acc, s.ba);
   vect3 omega;
   in.gyro.boxminus(omega, s.bg);
-  cov.template block<3, 3>(12, 3) = -s.rot * MTK::hat(acc_);  // .normalized().toRotationMatrix()
-  cov.template block<3, 3>(12, 18) = -s.rot;                  //.normalized().toRotationMatrix();
+  cov.template block<3, 3>(12, 3) = -s.rot * MTK::hat(acc);  // .normalized().toRotationMatrix()
+  cov.template block<3, 3>(12, 18) = -s.rot;                 //.normalized().toRotationMatrix();
   // Eigen::Matrix<state_ikfom::scalar, 2, 1> vec = Eigen::Matrix<state_ikfom::scalar, 2, 1>::Zero();
   // Eigen::Matrix<state_ikfom::scalar, 3, 2> grav_matrix;
   // s.S2_Mx(grav_matrix, vec, 21);
@@ -95,7 +94,7 @@ Eigen::Matrix<double, 24, 24> df_dx_input(state_input & s, const input_ikfom & i
   return cov;
 }
 
-Eigen::Matrix<double, 30, 30> df_dx_output(state_output & s, const input_ikfom & in)
+Eigen::Matrix<double, 30, 30> df_dx_output(state_output & s, const input_ikfom & /*in*/)
 {
   Eigen::Matrix<double, 30, 30> cov = Eigen::Matrix<double, 30, 30>::Zero();
   cov.template block<3, 3>(0, 12) = Eigen::Matrix3d::Identity();
@@ -110,7 +109,7 @@ Eigen::Matrix<double, 30, 30> df_dx_output(state_output & s, const input_ikfom &
 }
 
 void h_model_input(
-  state_input & s, Eigen::Matrix3d cov_p, Eigen::Matrix3d cov_R,
+  state_input & s, Eigen::Matrix3d /*cov_p*/, Eigen::Matrix3d /*cov_R*/,
   esekfom::dyn_share_modified<double> & ekfom_data)
 {
   bool match_in_map = false;
@@ -128,7 +127,7 @@ void h_model_input(
     p_world << point_world_j.x, point_world_j.y, point_world_j.z;
     {
       auto & points_near = Nearest_Points[idx + j + 1];
-      ivox_->GetClosestPoint(point_world_j, points_near, NUM_MATCH_POINTS);  //
+      ivox_->getClosestPoint(point_world_j, points_near, NUM_MATCH_POINTS);  //
       if ((points_near.size() <
            NUM_MATCH_POINTS))  // || pointSearchSqDis[NUM_MATCH_POINTS - 1] > 5) // 5)
       {
@@ -192,17 +191,17 @@ void h_model_input(
         p_crossmat << SKEW_SYM_MATRX(p_body);
         V3D point_imu = s.offset_R_L_I * p_body + s.offset_T_L_I;
         p_imu_crossmat << SKEW_SYM_MATRX(point_imu);
-        V3D C(s.rot.transpose() * norm_vec);
-        V3D A(p_imu_crossmat * C);
-        V3D B(p_crossmat * s.offset_R_L_I.transpose() * C);
+        V3D c(s.rot.transpose() * norm_vec);
+        V3D a(p_imu_crossmat * c);
+        V3D b(p_crossmat * s.offset_R_L_I.transpose() * c);
         ekfom_data.h_x.block<1, 12>(m, 0) << norm_vec(0), norm_vec(1), norm_vec(2),
-          VEC_FROM_ARRAY(A), VEC_FROM_ARRAY(B), VEC_FROM_ARRAY(C);
+          VEC_FROM_ARRAY(a), VEC_FROM_ARRAY(b), VEC_FROM_ARRAY(c);
       } else {
         M3D point_crossmat = crossmat_list[idx + j + 1];
-        V3D C(s.rot.transpose() * norm_vec);  // conjugate().normalized()
-        V3D A(point_crossmat * C);
+        V3D c(s.rot.transpose() * norm_vec);  // conjugate().normalized()
+        V3D a(point_crossmat * c);
         ekfom_data.h_x.block<1, 12>(m, 0) << norm_vec(0), norm_vec(1), norm_vec(2),
-          VEC_FROM_ARRAY(A), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
+          VEC_FROM_ARRAY(a), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
       }
       ekfom_data.z(m) = -norm_vec(0) * feats_down_world->points[idx + j + 1].x -
                         norm_vec(1) * feats_down_world->points[idx + j + 1].y -
@@ -216,7 +215,7 @@ void h_model_input(
 }
 
 void h_model_output(
-  state_output & s, Eigen::Matrix3d cov_p, Eigen::Matrix3d cov_R,
+  state_output & s, Eigen::Matrix3d /*cov_p*/, Eigen::Matrix3d /*cov_R*/,
   esekfom::dyn_share_modified<double> & ekfom_data)
 {
   bool match_in_map = false;
@@ -235,7 +234,7 @@ void h_model_output(
     {
       auto & points_near = Nearest_Points[idx + j + 1];
 
-      ivox_->GetClosestPoint(point_world_j, points_near, NUM_MATCH_POINTS);  //
+      ivox_->getClosestPoint(point_world_j, points_near, NUM_MATCH_POINTS);  //
 
       if ((points_near.size() <
            NUM_MATCH_POINTS))  // || pointSearchSqDis[NUM_MATCH_POINTS - 1] > 5)
@@ -298,17 +297,17 @@ void h_model_output(
         p_crossmat << SKEW_SYM_MATRX(p_body);
         V3D point_imu = s.offset_R_L_I * p_body + s.offset_T_L_I;
         p_imu_crossmat << SKEW_SYM_MATRX(point_imu);
-        V3D C(s.rot.transpose() * norm_vec);
-        V3D A(p_imu_crossmat * C);
-        V3D B(p_crossmat * s.offset_R_L_I.transpose() * C);
+        V3D c(s.rot.transpose() * norm_vec);
+        V3D a(p_imu_crossmat * c);
+        V3D b(p_crossmat * s.offset_R_L_I.transpose() * c);
         ekfom_data.h_x.block<1, 12>(m, 0) << norm_vec(0), norm_vec(1), norm_vec(2),
-          VEC_FROM_ARRAY(A), VEC_FROM_ARRAY(B), VEC_FROM_ARRAY(C);
+          VEC_FROM_ARRAY(a), VEC_FROM_ARRAY(b), VEC_FROM_ARRAY(c);
       } else {
         M3D point_crossmat = crossmat_list[idx + j + 1];
-        V3D C(s.rot.transpose() * norm_vec);  // conjugate().normalized()
-        V3D A(point_crossmat * C);
+        V3D c(s.rot.transpose() * norm_vec);  // conjugate().normalized()
+        V3D a(point_crossmat * c);
         ekfom_data.h_x.block<1, 12>(m, 0) << norm_vec(0), norm_vec(1), norm_vec(2),
-          VEC_FROM_ARRAY(A), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
+          VEC_FROM_ARRAY(a), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
       }
       ekfom_data.z(m) = -norm_vec(0) * feats_down_world->points[idx + j + 1].x -
                         norm_vec(1) * feats_down_world->points[idx + j + 1].y -

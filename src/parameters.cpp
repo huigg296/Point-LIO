@@ -19,7 +19,6 @@ int init_map_size = 10, con_frame_num = 1;
 double match_s = 81, satu_acc, satu_gyro, cut_frame_time_interval = 0.1;
 float plane_thr = 0.1f;
 double filter_size_surf_min = 0.5, filter_size_map_min = 0.5, fov_deg = 180;
-// double cube_len = 2000;
 float DET_RANGE = 450;
 bool imu_en = true;
 double imu_time_inte = 0.005;
@@ -31,8 +30,8 @@ int lidar_type, pcd_save_interval;
 std::vector<double> gravity_init, gravity;
 bool runtime_pos_log, pcd_save_en, path_en, extrinsic_est_en = true;
 bool scan_pub_en, scan_body_pub_en;
-shared_ptr<Preprocess> p_pre;
-shared_ptr<ImuProcess> p_imu;
+std::shared_ptr<Preprocess> p_pre;
+std::shared_ptr<ImuProcess> p_imu;
 double time_update_last = 0.0, time_current = 0.0, time_predict_last_const = 0.0, t_last = 0.0;
 double time_diff_lidar_to_imu = 0.0;
 
@@ -43,9 +42,9 @@ bool cut_frame_init = true;
 
 MeasureGroup Measures;
 
-ofstream fout_out, fout_imu_pbp, fout_rtk;
+std::ofstream fout_out, fout_imu_pbp, fout_rtk;
 
-void readParameters(shared_ptr<rclcpp::Node> & nh)
+void readParameters(std::shared_ptr<rclcpp::Node> & nh)
 {
   p_pre.reset(new Preprocess());
   p_imu.reset(new ImuProcess());
@@ -69,7 +68,6 @@ void readParameters(shared_ptr<rclcpp::Node> & nh)
   nh->declare_parameter<double>("common.time_diff_lidar_to_imu", 0.0);
   nh->declare_parameter<double>("filter_size_surf", 0.5);
   nh->declare_parameter<double>("filter_size_map", 0.5);
-  // nh.param<double>("cube_side_length",cube_len,2000);
   nh->declare_parameter<float>("mapping.det_range", 300.f);
   nh->declare_parameter<double>("mapping.fov_degree", 180);
   nh->declare_parameter<bool>("mapping.imu_en", true);
@@ -198,12 +196,12 @@ Eigen::Matrix<double, 3, 1> SO3ToEuler(const SO3 & rot)
 
 void open_file()
 {
-  fout_out.open(DEBUG_FILE_DIR("mat_out.txt"), ios::out);
-  fout_imu_pbp.open(DEBUG_FILE_DIR("imu_pbp.txt"), ios::out);
+  fout_out.open(DEBUG_FILE_DIR("mat_out.txt"), std::ios::out);
+  fout_imu_pbp.open(DEBUG_FILE_DIR("imu_pbp.txt"), std::ios::out);
   if (fout_out && fout_imu_pbp)
-    cout << "~~~~" << ROOT_DIR << " file opened" << '\n';
+    std::cout << "~~~~" << ROOT_DIR << " file opened" << '\n';
   else
-    cout << "~~~~" << ROOT_DIR << " doesn't exist" << '\n';
+    std::cout << "~~~~" << ROOT_DIR << " doesn't exist" << '\n';
 }
 
 void reset_cov(Eigen::Matrix<double, 24, 24> & P_init)

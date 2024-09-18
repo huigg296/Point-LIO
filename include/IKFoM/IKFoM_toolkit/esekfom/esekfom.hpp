@@ -41,7 +41,6 @@
 #include <Eigen/Geometry>
 #include <Eigen/Sparse>
 #include <boost/bind/bind.hpp>
-#include <cstdlib>
 #include <vector>
 
 #include "../mtk/build_manifold.hpp"
@@ -54,8 +53,6 @@
 
 namespace esekfom
 {
-
-using namespace Eigen;
 
 template <typename T>
 struct dyn_share_modified
@@ -80,11 +77,11 @@ class esekf
 
 public:
   typedef typename state::scalar scalar_type;
-  typedef Matrix<scalar_type, n, n> cov;
-  typedef Matrix<scalar_type, m, n> cov_;
-  typedef SparseMatrix<scalar_type> spMt;
-  typedef Matrix<scalar_type, n, 1> vectorized_state;
-  typedef Matrix<scalar_type, m, 1> flatted_state;
+  typedef Eigen::Matrix<scalar_type, n, n> cov;
+  typedef Eigen::Matrix<scalar_type, m, n> cov_;
+  typedef Eigen::SparseMatrix<scalar_type> spMt;
+  typedef Eigen::Matrix<scalar_type, n, 1> vectorized_state;
+  typedef Eigen::Matrix<scalar_type, m, 1> flatted_state;
   typedef flatted_state processModel(state &, const input &);
   typedef Eigen::Matrix<scalar_type, m, n> processMatrix1(state &, const input &);
   typedef Eigen::Matrix<scalar_type, m, process_noise_dof> processMatrix2(state &, const input &);
@@ -166,7 +163,7 @@ public:
         }
       }
 
-      Matrix<scalar_type, 3, 3> res_temp_SO3;
+      Eigen::Matrix<scalar_type, 3, 3> res_temp_SO3;
       MTK::vect<3, scalar_type> seg_SO3;
       for (std::vector<std::pair<int, int> >::iterator it = x_.SO3_state.begin();
            it != x_.SO3_state.end(); it++) {
@@ -205,9 +202,9 @@ public:
         return false;
         // continue;
       }
-      Matrix<scalar_type, Eigen::Dynamic, Eigen::Dynamic> z = dyn_share.z;
+      Eigen::Matrix<scalar_type, Eigen::Dynamic, Eigen::Dynamic> z = dyn_share.z;
       // Matrix<scalar_type, Eigen::Dynamic, Eigen::Dynamic> R = dyn_share.R;
-      Matrix<scalar_type, Eigen::Dynamic, Eigen::Dynamic> h_x = dyn_share.h_x;
+      Eigen::Matrix<scalar_type, Eigen::Dynamic, Eigen::Dynamic> h_x = dyn_share.h_x;
       // Matrix<scalar_type, Eigen::Dynamic, Eigen::Dynamic> h_v = dyn_share.h_v;
       dof_Measurement = h_x.rows();
       m_noise = dyn_share.M_Noise;
@@ -217,9 +214,9 @@ public:
       // dx_new = dx;
       // P_ = P_propagated;
 
-      Matrix<scalar_type, n, Eigen::Dynamic> PHT;
-      Matrix<scalar_type, Eigen::Dynamic, Eigen::Dynamic> HPHT;
-      Matrix<scalar_type, n, Eigen::Dynamic> K_;
+      Eigen::Matrix<scalar_type, n, Eigen::Dynamic> PHT;
+      Eigen::Matrix<scalar_type, Eigen::Dynamic, Eigen::Dynamic> HPHT;
+      Eigen::Matrix<scalar_type, n, Eigen::Dynamic> K_;
       if (n > dof_Measurement) {
         PHT = P_.template block<n, 12>(0, 0) * h_x.transpose();
         HPHT = h_x * PHT.topRows(12);
@@ -228,13 +225,13 @@ public:
         }
         K_ = PHT * HPHT.inverse();
       } else {
-        Matrix<scalar_type, 12, 12> HTH = m_noise * h_x.transpose() * h_x;
-        Matrix<scalar_type, n, n> P_inv = P_.inverse();
+        Eigen::Matrix<scalar_type, 12, 12> HTH = m_noise * h_x.transpose() * h_x;
+        Eigen::Matrix<scalar_type, n, n> P_inv = P_.inverse();
         P_inv.template block<12, 12>(0, 0) += HTH;
         P_inv = P_inv.inverse();
         K_ = P_inv.template block<n, 12>(0, 0) * h_x.transpose() * m_noise;
       }
-      Matrix<scalar_type, n, 1> dx_ =
+      Eigen::Matrix<scalar_type, n, 1> dx_ =
         K_ * z;  // - h) + (K_x - Matrix<scalar_type, n, n>::Identity()) * dx_new;
       // state x_before = x_;
 
@@ -253,11 +250,11 @@ public:
       dyn_share.valid = true;
       h_dyn_share_modified_2(x_, dyn_share);
 
-      Matrix<scalar_type, 6, 1> z = dyn_share.z_IMU;
+      Eigen::Matrix<scalar_type, 6, 1> z = dyn_share.z_IMU;
 
-      Matrix<double, 30, 6> PHT;
-      Matrix<double, 6, 30> HP;
-      Matrix<double, 6, 6> HPHT;
+      Eigen::Matrix<double, 30, 6> PHT;
+      Eigen::Matrix<double, 6, 30> HP;
+      Eigen::Matrix<double, 6, 6> HPHT;
       PHT.setZero();
       HP.setZero();
       HPHT.setZero();
@@ -275,7 +272,7 @@ public:
       }
       Eigen::Matrix<double, 30, 6> K = PHT * HPHT.inverse();
 
-      Matrix<scalar_type, n, 1> dx_ = K * z;
+      Eigen::Matrix<scalar_type, n, 1> dx_ = K * z;
 
       P_ -= K * HP;
       x_.boxplus(dx_);

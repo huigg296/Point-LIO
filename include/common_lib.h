@@ -8,12 +8,9 @@
 
 #include <../include/IKFoM/IKFoM_toolkit/esekfom/esekfom.hpp>
 #include <Eigen/Eigen>
+#include <deque>
 #include <nav_msgs/msg/odometry.hpp>
-#include <queue>
 #include <sensor_msgs/msg/imu.hpp>
-
-using namespace std;
-using namespace Eigen;
 
 typedef MTK::vect<3, double> vect3;
 typedef MTK::SO3<double> SO3;
@@ -60,22 +57,22 @@ extern esekfom::esekf<state_output, 30, input_ikfom> kf_output;
 #define ARRAY_FROM_EIGEN(mat) mat.data(), mat.data() + mat.rows() * mat.cols()
 #define STD_VEC_FROM_EIGEN(mat) \
   vector<decltype(mat)::Scalar>(mat.data(), mat.data() + mat.rows() * mat.cols())
-#define DEBUG_FILE_DIR(name) (string(string(ROOT_DIR) + "Log/" + name))
+#define DEBUG_FILE_DIR(name) (std::string(std::string(ROOT_DIR) + "Log/" + name))
 
 typedef pcl::PointXYZINormal PointType;
 typedef pcl::PointXYZRGB PointTypeRGB;
 typedef pcl::PointCloud<PointType> PointCloudXYZI;
 typedef pcl::PointCloud<PointTypeRGB> PointCloudXYZRGB;
-typedef vector<PointType, Eigen::aligned_allocator<PointType>> PointVector;
-typedef Vector3d V3D;
-typedef Matrix3d M3D;
-typedef Vector3f V3F;
-typedef Matrix3f M3F;
+typedef std::vector<PointType, Eigen::aligned_allocator<PointType>> PointVector;
+typedef Eigen::Vector3d V3D;
+typedef Eigen::Matrix3d M3D;
+typedef Eigen::Vector3f V3F;
+typedef Eigen::Matrix3f M3F;
 
-#define MD(a, b) Matrix<double, (a), (b)>
-#define VD(a) Matrix<double, (a), 1>
-#define MF(a, b) Matrix<float, (a), (b)>
-#define VF(a) Matrix<float, (a), 1>
+#define MD(a, b) Eigen::Matrix<double, (a), (b)>
+#define VD(a) Eigen::Matrix<double, (a), 1>
+#define MF(a, b) Eigen::Matrix<float, (a), (b)>
+#define VF(a) Eigen::Matrix<float, (a), 1>
 
 const M3D Eye3d(M3D::Identity());
 const M3F Eye3f(M3F::Identity());
@@ -93,7 +90,7 @@ struct MeasureGroup  // Lidar data and imu dates for the curent process
   double lidar_beg_time;
   double lidar_last_time;
   PointCloudXYZI::Ptr lidar;
-  deque<sensor_msgs::msg::Imu::ConstSharedPtr> imu;
+  std::deque<sensor_msgs::msg::Imu::ConstSharedPtr> imu;
 };
 
 template <typename T>
@@ -147,19 +144,20 @@ normvec:  normalized x0
 */
 template <typename T>
 bool esti_normvector(
-  Matrix<T, 3, 1> & normvec, const PointVector & point, const T & threshold, const int & point_num)
+  Eigen::Matrix<T, 3, 1> & normvec, const PointVector & point, const T & threshold,
+  const int & point_num)
 {
-  MatrixXf A(point_num, 3);
-  MatrixXf b(point_num, 1);
+  Eigen::MatrixXf a(point_num, 3);
+  Eigen::MatrixXf b(point_num, 1);
   b.setOnes();
   b *= -1.0f;
 
   for (int j = 0; j < point_num; j++) {
-    A(j, 0) = point[j].x;
-    A(j, 1) = point[j].y;
-    A(j, 2) = point[j].z;
+    a(j, 0) = point[j].x;
+    a(j, 1) = point[j].y;
+    a(j, 2) = point[j].z;
   }
-  normvec = A.colPivHouseholderQr().solve(b);
+  normvec = a.colPivHouseholderQr().solve(b);
 
   for (int j = 0; j < point_num; j++) {
     if (
@@ -174,21 +172,21 @@ bool esti_normvector(
 }
 
 template <typename T>
-bool esti_plane(Matrix<T, 4, 1> & pca_result, const PointVector & point, const T & threshold)
+bool esti_plane(Eigen::Matrix<T, 4, 1> & pca_result, const PointVector & point, const T & threshold)
 {
-  Matrix<T, NUM_MATCH_POINTS, 3> A;
-  Matrix<T, NUM_MATCH_POINTS, 1> b;
-  A.setZero();
+  Eigen::Matrix<T, NUM_MATCH_POINTS, 3> a;
+  Eigen::Matrix<T, NUM_MATCH_POINTS, 1> b;
+  a.setZero();
   b.setOnes();
   b *= -1.0f;
 
   for (int j = 0; j < NUM_MATCH_POINTS; j++) {
-    A(j, 0) = point[j].x;
-    A(j, 1) = point[j].y;
-    A(j, 2) = point[j].z;
+    a(j, 0) = point[j].x;
+    a(j, 1) = point[j].y;
+    a(j, 2) = point[j].z;
   }
 
-  Matrix<T, 3, 1> normvec = A.colPivHouseholderQr().solve(b);
+  Eigen::Matrix<T, 3, 1> normvec = a.colPivHouseholderQr().solve(b);
 
   T n = normvec.norm();
   pca_result(0) = normvec(0) / n;

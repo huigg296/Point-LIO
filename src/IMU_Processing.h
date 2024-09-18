@@ -1,6 +1,5 @@
 #pragma once
 #include <common_lib.h>
-#include <math.h>
 #include <pcl/common/io.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/point_cloud.h>
@@ -9,8 +8,6 @@
 #include <tf2_ros/transform_broadcaster.h>
 
 #include <Eigen/Eigen>
-#include <cmath>
-#include <csignal>
 #include <nav_msgs/msg/odometry.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
@@ -29,11 +26,11 @@ public:
   ImuProcess();
   ~ImuProcess();
 
-  void Reset();
-  void Process(const MeasureGroup & meas, PointCloudXYZI::Ptr pcl_un_);
-  void set_gyr_cov(const V3D & scaler);
-  void set_acc_cov(const V3D & scaler);
-  void Set_init(Eigen::Vector3d & tmp_gravity, Eigen::Matrix3d & rot);
+  void reset();
+  void process(const MeasureGroup & meas, PointCloudXYZI::Ptr pcl_un_);
+  void setGyrCov(const V3D & scaler);
+  void setAccCov(const V3D & scaler);
+  void setInit(Eigen::Vector3d & tmp_gravity, Eigen::Matrix3d & rot);
 
   MD(12, 12) state_cov = MD(12, 12)::Identity();
   int lidar_type;
@@ -48,7 +45,7 @@ public:
   V3D cov_vel_scale = V3D(0.0001, 0.0001, 0.0001);
 
 private:
-  void IMU_init(const MeasureGroup & meas, int & N);
+  void imuInit(const MeasureGroup & meas, int & N);
 
   V3D mean_gyr;
   int init_iter_num = 1;

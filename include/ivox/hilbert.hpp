@@ -26,7 +26,6 @@
 
 #include <algorithm>
 #include <array>
-#include <cstdint>
 #include <limits>
 #include <type_traits>
 
@@ -286,14 +285,16 @@ namespace tmp
 {
 template <typename T, size_t N, size_t D>
 T TransposeBits2(
-  std::array<T, N> const &, std::integral_constant<size_t, D>, std::integral_constant<size_t, 0>)
+  std::array<T, N> const & /*unused*/, std::integral_constant<size_t, D> /*unused*/,
+  std::integral_constant<size_t, 0> /*unused*/)
 {
   return T(0);
 }
 
 template <typename T, size_t N, size_t D, size_t B>
 T TransposeBits2(
-  std::array<T, N> const & in, std::integral_constant<size_t, D>, std::integral_constant<size_t, B>)
+  std::array<T, N> const & in, std::integral_constant<size_t, D> /*unused*/,
+  std::integral_constant<size_t, B> /*unused*/)
 {
   const size_t size = std::numeric_limits<T>::digits;
   const size_t src = ((D + ((size - B) * N)) / size);
@@ -311,13 +312,15 @@ T TransposeBits2(
 }
 
 template <typename T, size_t N>
-void TransposeBits(std::array<T, N> const &, std::array<T, N> &, std::integral_constant<size_t, 0>)
+void TransposeBits(
+  std::array<T, N> const & /*unused*/, std::array<T, N> & /*unused*/,
+  std::integral_constant<size_t, 0> /*unused*/)
 {
 }
 
 template <typename T, size_t N, size_t D>
 void TransposeBits(
-  std::array<T, N> const & in, std::array<T, N> & out, std::integral_constant<size_t, D>)
+  std::array<T, N> const & in, std::array<T, N> & out, std::integral_constant<size_t, D> /*unused*/)
 {
   out[D - 1] = TransposeBits2(
     in, std::integral_constant<size_t, D - 1>(),
@@ -328,14 +331,16 @@ void TransposeBits(
 
 template <typename T, size_t N, size_t D>
 T UntransposeBits2(
-  std::array<T, N> const &, std::integral_constant<size_t, D>, std::integral_constant<size_t, 0>)
+  std::array<T, N> const & /*unused*/, std::integral_constant<size_t, D> /*unused*/,
+  std::integral_constant<size_t, 0> /*unused*/)
 {
   return T(0);
 }
 
 template <typename T, size_t N, size_t D, size_t B>
 T UntransposeBits2(
-  std::array<T, N> const & in, std::integral_constant<size_t, D>, std::integral_constant<size_t, B>)
+  std::array<T, N> const & in, std::integral_constant<size_t, D> /*unused*/,
+  std::integral_constant<size_t, B> /*unused*/)
 {
   const size_t size = std::numeric_limits<T>::digits;
   const size_t src = ((D * size) + (size - B)) % N;
@@ -355,13 +360,14 @@ T UntransposeBits2(
 
 template <typename T, size_t N>
 void UntransposeBits(
-  std::array<T, N> const &, std::array<T, N> &, std::integral_constant<size_t, 0>)
+  std::array<T, N> const & /*unused*/, std::array<T, N> & /*unused*/,
+  std::integral_constant<size_t, 0> /*unused*/)
 {
 }
 
 template <typename T, size_t N, size_t D>
 void UntransposeBits(
-  std::array<T, N> const & in, std::array<T, N> & out, std::integral_constant<size_t, D>)
+  std::array<T, N> const & in, std::array<T, N> & out, std::integral_constant<size_t, D> /*unused*/)
 {
   out[D - 1] = UntransposeBits2(
     in, std::integral_constant<size_t, D - 1>(),
@@ -372,14 +378,14 @@ void UntransposeBits(
 
 template <typename T, size_t N>
 void ApplyGrayCode1(
-  std::array<T, N> const & in, std::array<T, N> & out, std::integral_constant<size_t, 0>)
+  std::array<T, N> const & in, std::array<T, N> & out, std::integral_constant<size_t, 0> /*unused*/)
 {
   out[0] ^= in[N - 1] >> 1;
 }
 
 template <typename T, size_t N, size_t I>
 void ApplyGrayCode1(
-  std::array<T, N> const & in, std::array<T, N> & out, std::integral_constant<size_t, I>)
+  std::array<T, N> const & in, std::array<T, N> & out, std::integral_constant<size_t, I> /*unused*/)
 {
   out[I] ^= out[I - 1];
 
@@ -388,13 +394,13 @@ void ApplyGrayCode1(
 
 // Remove a gray code from a transposed vector
 template <typename T, size_t N>
-void RemoveGrayCode1(std::array<T, N> &, std::integral_constant<size_t, 0>)
+void RemoveGrayCode1(std::array<T, N> & /*unused*/, std::integral_constant<size_t, 0> /*unused*/)
 {
 }
 
 // xor array values with previous values.
 template <typename T, size_t N, size_t D>
-void RemoveGrayCode1(std::array<T, N> & in, std::integral_constant<size_t, D>)
+void RemoveGrayCode1(std::array<T, N> & in, std::integral_constant<size_t, D> /*unused*/)
 {
   const size_t src_idx = N - (D + 1);
   const size_t dst_idx = N - D;
@@ -405,13 +411,13 @@ void RemoveGrayCode1(std::array<T, N> & in, std::integral_constant<size_t, D>)
 }
 
 template <typename T>
-T RemoveGrayCode2(T, std::integral_constant<size_t, 1>)
+T RemoveGrayCode2(T /*unused*/, std::integral_constant<size_t, 1> /*unused*/)
 {
   return T(0);
 }
 
 template <typename T, size_t B>
-T RemoveGrayCode2(T v, std::integral_constant<size_t, B>)
+T RemoveGrayCode2(T v, std::integral_constant<size_t, B> /*unused*/)
 {
   const T cur_bit(T(1) << (B - 1));
   const T low_bits(cur_bit - 1);
@@ -425,13 +431,15 @@ T RemoveGrayCode2(T v, std::integral_constant<size_t, B>)
 
 template <typename T, size_t N, size_t B>
 void GrayToHilbert2(
-  std::array<T, N> &, std::integral_constant<size_t, B>, std::integral_constant<size_t, 0>)
+  std::array<T, N> & /*unused*/, std::integral_constant<size_t, B> /*unused*/,
+  std::integral_constant<size_t, 0> /*unused*/)
 {
 }
 
 template <typename T, size_t N, size_t B, size_t I>
 void GrayToHilbert2(
-  std::array<T, N> & out, std::integral_constant<size_t, B>, std::integral_constant<size_t, I>)
+  std::array<T, N> & out, std::integral_constant<size_t, B> /*unused*/,
+  std::integral_constant<size_t, I> /*unused*/)
 {
   const size_t n(I - 1);
   const T cur_bit(T(1) << (std::numeric_limits<T>::digits - B));
@@ -451,12 +459,12 @@ void GrayToHilbert2(
 }
 
 template <typename T, size_t N>
-void GrayToHilbert(std::array<T, N> &, std::integral_constant<size_t, 0>)
+void GrayToHilbert(std::array<T, N> & /*unused*/, std::integral_constant<size_t, 0> /*unused*/)
 {
 }
 
 template <typename T, size_t N, size_t B>
-void GrayToHilbert(std::array<T, N> & out, std::integral_constant<size_t, B>)
+void GrayToHilbert(std::array<T, N> & out, std::integral_constant<size_t, B> /*unused*/)
 {
   GrayToHilbert2(out, std::integral_constant<size_t, B>(), std::integral_constant<size_t, N>());
 
@@ -465,13 +473,15 @@ void GrayToHilbert(std::array<T, N> & out, std::integral_constant<size_t, B>)
 
 template <typename T, size_t N, size_t B>
 void HilbertToGray2(
-  std::array<T, N> &, std::integral_constant<size_t, B>, std::integral_constant<size_t, 0>)
+  std::array<T, N> & /*unused*/, std::integral_constant<size_t, B> /*unused*/,
+  std::integral_constant<size_t, 0> /*unused*/)
 {
 }
 
 template <typename T, size_t N, size_t B, size_t I>
 void HilbertToGray2(
-  std::array<T, N> & out, std::integral_constant<size_t, B>, std::integral_constant<size_t, I>)
+  std::array<T, N> & out, std::integral_constant<size_t, B> /*unused*/,
+  std::integral_constant<size_t, I> /*unused*/)
 {
   const size_t cur_bit(T(1) << B);
   const size_t low_bits(cur_bit - 1);
@@ -491,12 +501,12 @@ void HilbertToGray2(
 }
 
 template <typename T, size_t N>
-void HilbertToGray(std::array<T, N> &, std::integral_constant<size_t, 0>)
+void HilbertToGray(std::array<T, N> & /*unused*/, std::integral_constant<size_t, 0> /*unused*/)
 {
 }
 
 template <typename T, size_t N, size_t B>
-void HilbertToGray(std::array<T, N> & out, std::integral_constant<size_t, B>)
+void HilbertToGray(std::array<T, N> & out, std::integral_constant<size_t, B> /*unused*/)
 {
   HilbertToGray2(out, std::integral_constant<size_t, B>(), std::integral_constant<size_t, N>());
 
@@ -504,12 +514,13 @@ void HilbertToGray(std::array<T, N> & out, std::integral_constant<size_t, B>)
 }
 
 template <typename T, size_t N>
-void ApplyMaskToArray(std::array<T, N> &, T, std::integral_constant<size_t, 0>)
+void ApplyMaskToArray(
+  std::array<T, N> & /*unused*/, T /*unused*/, std::integral_constant<size_t, 0> /*unused*/)
 {
 }
 
 template <typename T, size_t N, size_t I>
-void ApplyMaskToArray(std::array<T, N> & a, T mask, std::integral_constant<size_t, I>)
+void ApplyMaskToArray(std::array<T, N> & a, T mask, std::integral_constant<size_t, I> /*unused*/)
 {
   a[I - 1] ^= mask;
 

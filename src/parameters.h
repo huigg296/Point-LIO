@@ -1,5 +1,3 @@
-// #ifndef PARAM_H
-// #define PARAM_H
 #pragma once
 #include <Python.h>
 #include <ivox/ivox3d.h>
@@ -19,8 +17,6 @@
 
 #include "IMU_Processing.h"
 #include "preprocess.h"
-
-// #define IVOX_NODE_TYPE_PHC
 
 #ifdef IVOX_NODE_TYPE_PHC
 using IVoxType = faster_lio::IVox<3, faster_lio::IVoxNodeType::PHC, PointType>;
@@ -44,7 +40,6 @@ extern int init_map_size, con_frame_num;
 extern double match_s, satu_acc, satu_gyro, cut_frame_time_interval;
 extern float plane_thr;
 extern double filter_size_surf_min, filter_size_map_min, fov_deg;
-// extern double cube_len;
 extern float DET_RANGE;
 extern bool imu_en;
 extern double imu_time_inte;
@@ -56,8 +51,8 @@ extern int lidar_type, pcd_save_interval;
 extern std::vector<double> gravity_init, gravity;
 extern bool runtime_pos_log, pcd_save_en, path_en;
 extern bool scan_pub_en, scan_body_pub_en;
-extern shared_ptr<Preprocess> p_pre;
-extern shared_ptr<ImuProcess> p_imu;
+extern std::shared_ptr<Preprocess> p_pre;
+extern std::shared_ptr<ImuProcess> p_imu;
 extern bool is_first_frame;
 
 extern std::vector<double> extrinT;
@@ -71,8 +66,8 @@ extern double time_update_last, time_current, time_predict_last_const, t_last;
 
 extern MeasureGroup Measures;
 
-extern ofstream fout_out, fout_imu_pbp, fout_rtk;
-void readParameters(shared_ptr<rclcpp::Node> & nh);
+extern std::ofstream fout_out, fout_imu_pbp, fout_rtk;
+void readParameters(std::shared_ptr<rclcpp::Node> & nh);
 void open_file();
 Eigen::Matrix<double, 3, 1> SO3ToEuler(const SO3 & orient);
 void reset_cov(Eigen::Matrix<double, 24, 24> & P_init);

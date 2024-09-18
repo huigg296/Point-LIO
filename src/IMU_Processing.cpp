@@ -2,9 +2,9 @@
 
 const bool time_list(PointType & x, PointType & y) { return (x.curvature < y.curvature); };
 
-void ImuProcess::set_gyr_cov(const V3D & scaler) { cov_gyr_scale = scaler; }
+void ImuProcess::setGyrCov(const V3D & scaler) { cov_gyr_scale = scaler; }
 
-void ImuProcess::set_acc_cov(const V3D & scaler) { cov_vel_scale = scaler; }
+void ImuProcess::setAccCov(const V3D & scaler) { cov_vel_scale = scaler; }
 
 ImuProcess::ImuProcess()
 : b_first_frame_(true), imu_need_init_(true), logger(rclcpp::get_logger("ImuProcess"))
@@ -19,9 +19,9 @@ ImuProcess::ImuProcess()
 
 ImuProcess::~ImuProcess() {}
 
-void ImuProcess::Reset()
+void ImuProcess::reset()
 {
-  RCLCPP_WARN(logger, "Reset ImuProcess");
+  RCLCPP_WARN(logger, "reset ImuProcess");
   mean_acc = V3D(0, 0, 0.0);
   mean_gyr = V3D(0, 0, 0);
   imu_need_init_ = true;
@@ -31,7 +31,7 @@ void ImuProcess::Reset()
   time_last_scan = 0.0;
 }
 
-void ImuProcess::Set_init(Eigen::Vector3d & tmp_gravity, Eigen::Matrix3d & rot)
+void ImuProcess::setInit(Eigen::Vector3d & tmp_gravity, Eigen::Matrix3d & rot)
 {
   /** 1. initializing the gravity, gyro bias, acc and gyro covariance
    ** 2. normalize the acceleration measurenments to unit gravity **/
@@ -54,7 +54,7 @@ void ImuProcess::Set_init(Eigen::Vector3d & tmp_gravity, Eigen::Matrix3d & rot)
   }
 }
 
-void ImuProcess::IMU_init(const MeasureGroup & meas, int & N)
+void ImuProcess::imuInit(const MeasureGroup & meas, int & N)
 {
   /** 1. initializing the gravity, gyro bias, acc and gyro covariance
    ** 2. normalize the acceleration measurenments to unit gravity **/
@@ -62,7 +62,7 @@ void ImuProcess::IMU_init(const MeasureGroup & meas, int & N)
   V3D cur_acc, cur_gyr;
 
   if (b_first_frame_) {
-    Reset();
+    reset();
     N = 1;
     b_first_frame_ = false;
     const auto & imu_acc = meas.imu.front()->linear_acceleration;
@@ -84,7 +84,7 @@ void ImuProcess::IMU_init(const MeasureGroup & meas, int & N)
   }
 }
 
-void ImuProcess::Process(const MeasureGroup & meas, PointCloudXYZI::Ptr cur_pcl_un_)
+void ImuProcess::process(const MeasureGroup & meas, PointCloudXYZI::Ptr cur_pcl_un_)
 {
   if (imu_en) {
     if (meas.imu.empty()) return;
@@ -92,7 +92,7 @@ void ImuProcess::Process(const MeasureGroup & meas, PointCloudXYZI::Ptr cur_pcl_
     if (imu_need_init_) {
       {
         /// The very first lidar frame
-        IMU_init(meas, init_iter_num);
+        imuInit(meas, init_iter_num);
 
         imu_need_init_ = true;
 
@@ -101,7 +101,6 @@ void ImuProcess::Process(const MeasureGroup & meas, PointCloudXYZI::Ptr cur_pcl_
           imu_need_init_ = false;
           *cur_pcl_un_ = *(meas.lidar);
         }
-        // *cur_pcl_un_ = *(meas.lidar);
       }
       return;
     }

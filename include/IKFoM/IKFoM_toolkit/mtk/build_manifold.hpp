@@ -81,10 +81,6 @@
 #include <Eigen/Core>
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/seq.hpp>
-#include <vector>
-
-#include "src/SubManifold.hpp"
-#include "startIdx.hpp"
 
 #ifndef PARSED_BY_DOXYGEN
 //////// internals //////

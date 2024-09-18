@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <list>
 #include <vector>
 
 #include "hilbert.hpp"
@@ -55,17 +54,17 @@ public:
   struct DistPoint;
 
   IVoxNode() = default;
-  IVoxNode(const PointT & center, const float & side_length) {}  /// same with phc
+  IVoxNode(const PointT & /*center*/, const float & /*side_length*/) {}  /// same with phc
 
-  void InsertPoint(const PointT & pt);
+  void insertPoint(const PointT & pt);
 
-  inline bool Empty() const;
+  inline bool empty() const;
 
-  inline std::size_t Size() const;
+  inline std::size_t size() const;
 
-  inline PointT GetPoint(const std::size_t idx) const;
+  inline PointT getPoint(const std::size_t idx) const;
 
-  int KNNPointByCondition(
+  int knnPointByCondition(
     std::vector<DistPoint> & dis_points, const PointT & point, const int & K,
     const double & max_range);
 
@@ -83,26 +82,27 @@ public:
   struct PhcCube;
 
   IVoxNodePhc() = default;
+
   IVoxNodePhc(const PointT & center, const float & side_length, const int & phc_order = 6);
 
-  void InsertPoint(const PointT & pt);
+  void insertPoint(const PointT & pt);
 
-  void ErasePoint(const PointT & pt, const double erase_distance_th_);
+  void erasePoint(const PointT & pt, const double erase_distance_th_);
 
-  inline bool Empty() const;
+  inline bool empty() const;
 
-  inline std::size_t Size() const;
+  inline std::size_t size() const;
 
-  PointT GetPoint(const std::size_t idx) const;
+  PointT getPoint(const std::size_t idx) const;
 
-  bool NNPoint(const PointT & cur_pt, DistPoint & dist_point) const;
+  bool nnPoint(const PointT & cur_pt, DistPoint & dist_point) const;
 
-  int KNNPointByCondition(
+  int knnPointByCondition(
     std::vector<DistPoint> & dis_points, const PointT & cur_pt, const int & K = 5,
     const double & max_range = 5.0);
 
 private:
-  uint32_t CalculatePhcIndex(const PointT & pt) const;
+  uint32_t calculatePhcIndex(const PointT & pt) const;
 
 private:
   std::vector<PhcCube> phc_cubes_;
@@ -125,7 +125,7 @@ struct IVoxNode<PointT, dim>::DistPoint
   DistPoint() = default;
   DistPoint(const double d, IVoxNode * n, const int i) : dist(d), node(n), idx(i) {}
 
-  PointT Get() { return node->GetPoint(idx); }
+  PointT get() { return node->getPoint(idx); }
 
   inline bool operator()(const DistPoint & p1, const DistPoint & p2) { return p1.dist < p2.dist; }
 
@@ -133,31 +133,31 @@ struct IVoxNode<PointT, dim>::DistPoint
 };
 
 template <typename PointT, int dim>
-void IVoxNode<PointT, dim>::InsertPoint(const PointT & pt)
+void IVoxNode<PointT, dim>::insertPoint(const PointT & pt)
 {
   points_.template emplace_back(pt);
 }
 
 template <typename PointT, int dim>
-bool IVoxNode<PointT, dim>::Empty() const
+bool IVoxNode<PointT, dim>::empty() const
 {
   return points_.empty();
 }
 
 template <typename PointT, int dim>
-std::size_t IVoxNode<PointT, dim>::Size() const
+std::size_t IVoxNode<PointT, dim>::size() const
 {
   return points_.size();
 }
 
 template <typename PointT, int dim>
-PointT IVoxNode<PointT, dim>::GetPoint(const std::size_t idx) const
+PointT IVoxNode<PointT, dim>::getPoint(const std::size_t idx) const
 {
   return points_[idx];
 }
 
 template <typename PointT, int dim>
-int IVoxNode<PointT, dim>::KNNPointByCondition(
+int IVoxNode<PointT, dim>::knnPointByCondition(
   std::vector<DistPoint> & dis_points, const PointT & point, const int & K,
   const double & max_range)
 {
@@ -237,7 +237,7 @@ struct IVoxNodePhc<PointT, dim>::DistPoint
   DistPoint() {}
   DistPoint(const double d, IVoxNodePhc * n, const int i) : dist(d), node(n), idx(i) {}
 
-  PointT Get() { return node->GetPoint(idx); }
+  PointT get() { return node->getPoint(idx); }
 
   inline bool operator()(const DistPoint & p1, const DistPoint & p2) { return p1.dist < p2.dist; }
 
@@ -250,11 +250,11 @@ struct IVoxNodePhc<PointT, dim>::PhcCube
   uint32_t idx = 0;
   pcl::CentroidPoint<PointT> mean;
 
-  PhcCube(uint32_t index, const PointT & pt) { mean.add(pt); }
+  PhcCube(uint32_t /*index*/, const PointT & pt) { mean.add(pt); }
 
-  void AddPoint(PointT & pt) { mean.add(pt); }
+  void addPoint(PointT & pt) { mean.add(pt); }
 
-  PointT GetPoint() const
+  PointT getPoint() const
   {
     PointT pt;
     mean.get(pt);
@@ -275,9 +275,9 @@ IVoxNodePhc<PointT, dim>::IVoxNodePhc(
 }
 
 template <typename PointT, int dim>
-void IVoxNodePhc<PointT, dim>::InsertPoint(const PointT & pt)
+void IVoxNodePhc<PointT, dim>::insertPoint(const PointT & pt)
 {
-  uint32_t idx = CalculatePhcIndex(pt);
+  uint32_t idx = calculatePhcIndex(pt);
 
   PhcCube cube{idx, pt};
   auto it = std::lower_bound(
@@ -288,7 +288,7 @@ void IVoxNodePhc<PointT, dim>::InsertPoint(const PointT & pt)
     phc_cubes_.emplace_back(cube);
   } else {
     if (it->idx == idx) {
-      it->AddPoint(pt);
+      it->addPoint(pt);
     } else {
       phc_cubes_.insert(it, cube);
     }
@@ -296,9 +296,9 @@ void IVoxNodePhc<PointT, dim>::InsertPoint(const PointT & pt)
 }
 
 template <typename PointT, int dim>
-void IVoxNodePhc<PointT, dim>::ErasePoint(const PointT & pt, const double erase_distance_th_)
+void IVoxNodePhc<PointT, dim>::erasePoint(const PointT & pt, const double erase_distance_th_)
 {
-  uint32_t idx = CalculatePhcIndex(pt);
+  uint32_t idx = calculatePhcIndex(pt);
 
   PhcCube cube{idx, pt};
   auto it = std::lower_bound(
@@ -313,30 +313,30 @@ void IVoxNodePhc<PointT, dim>::ErasePoint(const PointT & pt, const double erase_
 }
 
 template <typename PointT, int dim>
-bool IVoxNodePhc<PointT, dim>::Empty() const
+bool IVoxNodePhc<PointT, dim>::empty() const
 {
   return phc_cubes_.empty();
 }
 
 template <typename PointT, int dim>
-std::size_t IVoxNodePhc<PointT, dim>::Size() const
+std::size_t IVoxNodePhc<PointT, dim>::size() const
 {
   return phc_cubes_.size();
 }
 
 template <typename PointT, int dim>
-PointT IVoxNodePhc<PointT, dim>::GetPoint(const std::size_t idx) const
+PointT IVoxNodePhc<PointT, dim>::getPoint(const std::size_t idx) const
 {
-  return phc_cubes_[idx].GetPoint();
+  return phc_cubes_[idx].getPoint();
 }
 
 template <typename PointT, int dim>
-bool IVoxNodePhc<PointT, dim>::NNPoint(const PointT & cur_pt, DistPoint & dist_point) const
+bool IVoxNodePhc<PointT, dim>::nnPoint(const PointT & cur_pt, DistPoint & dist_point) const
 {
   if (phc_cubes_.empty()) {
     return false;
   }
-  uint32_t cur_idx = CalculatePhcIndex(cur_pt);
+  uint32_t cur_idx = calculatePhcIndex(cur_pt);
   PhcCube cube{cur_idx, cur_pt};
   auto it = std::lower_bound(
     phc_cubes_.begin(), phc_cubes_.end(), cube,
@@ -344,14 +344,14 @@ bool IVoxNodePhc<PointT, dim>::NNPoint(const PointT & cur_pt, DistPoint & dist_p
 
   if (it == phc_cubes_.end()) {
     it--;
-    dist_point = DistPoint(distance2(cur_pt, it->GetPoint()), this, it - phc_cubes_.begin());
+    dist_point = DistPoint(distance2(cur_pt, it->getPoint()), this, it - phc_cubes_.begin());
   } else if (it == phc_cubes_.begin()) {
-    dist_point = DistPoint(distance2(cur_pt, it->GetPoint()), this, it - phc_cubes_.begin());
+    dist_point = DistPoint(distance2(cur_pt, it->getPoint()), this, it - phc_cubes_.begin());
   } else {
     auto last_it = it;
     last_it--;
-    double d1 = distance2(cur_pt, it->GetPoint());
-    double d2 = distance2(cur_pt, last_it->GetPoint());
+    double d1 = distance2(cur_pt, it->getPoint());
+    double d2 = distance2(cur_pt, last_it->getPoint());
     if (d1 > d2) {
       dist_point = DistPoint(d2, this, it - phc_cubes_.begin());
     } else {
@@ -363,11 +363,11 @@ bool IVoxNodePhc<PointT, dim>::NNPoint(const PointT & cur_pt, DistPoint & dist_p
 }
 
 template <typename PointT, int dim>
-int IVoxNodePhc<PointT, dim>::KNNPointByCondition(
+int IVoxNodePhc<PointT, dim>::knnPointByCondition(
   std::vector<DistPoint> & dis_points, const PointT & cur_pt, const int & K,
   const double & max_range)
 {
-  uint32_t cur_idx = CalculatePhcIndex(cur_pt);
+  uint32_t cur_idx = calculatePhcIndex(cur_pt);
   PhcCube cube{cur_idx, cur_pt};
   auto it = std::lower_bound(
     phc_cubes_.begin(), phc_cubes_.end(), cube,
@@ -380,7 +380,7 @@ int IVoxNodePhc<PointT, dim>::KNNPointByCondition(
 
   auto create_dist_point = [&cur_pt,
                             this](typename std::vector<PhcCube>::const_iterator forward_it) {
-    double d = distance2(forward_it->GetPoint(), cur_pt);
+    double d = distance2(forward_it->getPoint(), cur_pt);
     return DistPoint(d, this, forward_it - phc_cubes_.begin());
   };
 
@@ -432,7 +432,7 @@ int IVoxNodePhc<PointT, dim>::KNNPointByCondition(
 }
 
 template <typename PointT, int dim>
-uint32_t IVoxNodePhc<PointT, dim>::CalculatePhcIndex(const PointT & pt) const
+uint32_t IVoxNodePhc<PointT, dim>::calculatePhcIndex(const PointT & pt) const
 {
   Eigen::Matrix<float, dim, 1> eposf = (pt.getVector3fMap() - min_cube_) * phc_side_length_inv_;
   Eigen::Matrix<int, dim, 1> eposi = eposf.template cast<int>();
