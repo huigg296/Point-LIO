@@ -270,7 +270,7 @@ void set_posestamp(T & out)
 
 void publish_odometry(
   const rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr & pubOdomAftMapped,
-  std::shared_ptr<tf2_ros::TransformBroadcaster> & /*tf_br*/)
+  std::shared_ptr<tf2_ros::TransformBroadcaster> & tf_br)
 {
   odomAftMapped.header.frame_id = "camera_init";
   odomAftMapped.child_frame_id = "aft_mapped";
@@ -283,18 +283,20 @@ void publish_odometry(
 
   pubOdomAftMapped->publish(odomAftMapped);
 
-  // geometry_msgs::msg::TransformStamped transform;
-  // transform.header.frame_id = "camera_init";
-  // transform.child_frame_id = "aft_mapped";
-  // transform.transform.translation.x = odomAftMapped.pose.pose.position.x;
-  // transform.transform.translation.y = odomAftMapped.pose.pose.position.y;
-  // transform.transform.translation.z = odomAftMapped.pose.pose.position.z;
-  // transform.transform.rotation.w = odomAftMapped.pose.pose.orientation.w;
-  // transform.transform.rotation.x = odomAftMapped.pose.pose.orientation.x;
-  // transform.transform.rotation.y = odomAftMapped.pose.pose.orientation.y;
-  // transform.transform.rotation.z = odomAftMapped.pose.pose.orientation.z;
-  // transform.header.stamp = odomAftMapped.header.stamp;
-  // tf_br->sendTransform(transform);
+  if (tf_send_en) {
+    geometry_msgs::msg::TransformStamped transform;
+    transform.header.frame_id = "camera_init";
+    transform.child_frame_id = "aft_mapped";
+    transform.transform.translation.x = odomAftMapped.pose.pose.position.x;
+    transform.transform.translation.y = odomAftMapped.pose.pose.position.y;
+    transform.transform.translation.z = odomAftMapped.pose.pose.position.z;
+    transform.transform.rotation.w = odomAftMapped.pose.pose.orientation.w;
+    transform.transform.rotation.x = odomAftMapped.pose.pose.orientation.x;
+    transform.transform.rotation.y = odomAftMapped.pose.pose.orientation.y;
+    transform.transform.rotation.z = odomAftMapped.pose.pose.orientation.z;
+    transform.header.stamp = odomAftMapped.header.stamp;
+    tf_br->sendTransform(transform);
+  }
 }
 
 void publish_path(const rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubPath)
