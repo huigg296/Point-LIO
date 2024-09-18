@@ -175,7 +175,7 @@ void publish_frame_world(
   const rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr & pubLaserCloudFullRes)
 {
   if (scan_pub_en) {
-    PointCloudXYZI::Ptr laser_cloud_full_res(FEATS_UNDISTORT);
+    PointCloudXYZI::Ptr laser_cloud_full_res(dense_pub_en ? FEATS_UNDISTORT : feats_down_body);
     int size = laser_cloud_full_res->points.size();
 
     PointCloudXYZI::Ptr laser_cloud_world(new PointCloudXYZI(size, 1));
