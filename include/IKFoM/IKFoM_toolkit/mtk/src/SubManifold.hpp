@@ -36,7 +36,7 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
- 
+
 /*
  *  Copyright (c) 2008--2011, Universitaet Bremen
  *  All rights reserved.
@@ -75,15 +75,13 @@
  * @brief Defines the SubManifold class
  */
 
-
 #ifndef SUBMANIFOLD_HPP_
 #define SUBMANIFOLD_HPP_
 
-
 #include "vectview.hpp"
 
-
-namespace MTK {
+namespace MTK
+{
 
 /**
  * @ingroup SubManifolds
@@ -96,28 +94,25 @@ namespace MTK {
  * @tparam T   The manifold type of the sub-type
  * @tparam idx The index of the sub-type within the compound manifold
  */
-template<class T, int idx, int dim>
-struct SubManifold : public T 
+template <class T, int idx, int dim>
+struct SubManifold : public T
 {
-	enum {IDX = idx, DIM = dim /*!< index of the sub-type within the compound manifold */ };
-	//! manifold type
-	typedef T type;
-	
-	//! Construct from derived type
-	template<class X>
-	explicit
-	SubManifold(const X& t) : T(t) {};
-	
-	//! Construct from internal type
-	//explicit
-	SubManifold(const T& t) : T(t) {};
-	
-	//! inherit assignment operator
-	using T::operator=;
-	
+  enum { IDX = idx, DIM = dim /*!< index of the sub-type within the compound manifold */ };
+  //! manifold type
+  typedef T type;
+
+  //! Construct from derived type
+  template <class X>
+  explicit SubManifold(const X & t) : T(t){};
+
+  //! Construct from internal type
+  //explicit
+  SubManifold(const T & t) : T(t){};
+
+  //! inherit assignment operator
+  using T::operator=;
 };
 
 }  // namespace MTK
-
 
 #endif /* SUBMANIFOLD_HPP_ */
