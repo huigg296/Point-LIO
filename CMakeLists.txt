@@ -51,8 +51,10 @@ find_package(pcl_ros REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(livox_ros_driver2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED) # revised
 
 find_package(Eigen3 REQUIRED)
+find_package(PCL REQUIRED) # revised
 
 
 # OpenMP
@@ -93,6 +95,7 @@ ament_target_dependencies(pointlio_mapping
   pcl_conversions
   tf2_ros
   livox_ros_driver2
+  tf2_geometry_msgs # revised
 )
 
 target_link_libraries(pointlio_mapping ${PCL_LIBRARIES} ${PYTHON_LIBRARIES})
