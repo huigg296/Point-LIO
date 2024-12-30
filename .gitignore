@@ -9,3 +9,6 @@ __pycache__/
 .catkin_workspace
 *.gv
 *.pdf
+
+.idea
+cmake-build-debug
